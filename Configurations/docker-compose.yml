@@ -1,0 +1,41 @@
+version: "3.9"
+
+networks:
+  spotifyNet:
+    driver: bridge
+
+services:
+
+  postgresServerDbSpotify:
+    image: postgres:16
+    container_name: postgres_db_spotify
+    restart: always
+    ports:
+      - "5024:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ${VOLUME_POSTGRES}
+    networks:
+      - spotifyNet
+
+  api:
+    image: utereskovi/spotify-java:latest
+    container_name: spotify-java
+    volumes:
+      - /data/spotify/images:/app/images
+      - /data/spotify/music:/app/music
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgresServerDbSpotify:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    ports:
+      - "5899:8080"
+    depends_on:
+      - postgresServerDbSpotify
+    networks:
+      - spotifyNet
